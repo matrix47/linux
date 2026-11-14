@@ -2985,7 +2985,11 @@ static int pfe_eth_poll(struct pfe_eth_priv_s *priv, struct napi_struct *napi, u
 		priv->lro_nb_counters[skb_shinfo(skb)->nr_frags & (LRO_NB_COUNT_MAX - 1)]++;
 #endif
 
-		netif_receive_skb(skb);
+		/* Hardware LRO already aggregated the stream; otherwise let GRO do it */
+		if (dev->features & NETIF_F_LRO)
+			netif_receive_skb(skb);
+		else
+			napi_gro_receive(napi, skb);
 
 		priv->stats.rx_packets++;
 		priv->stats.rx_bytes += len;
